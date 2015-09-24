@@ -25,10 +25,10 @@ class SingleFileParser(object):
             sys.exit(1)
 
     def ParseToIntermediateObject(self):
-        print("[started  parsing] " + self.Filename)
+        print(("[started  parsing] " + self.Filename))
         classes = []
         functions = []
-        for clsName in self.CppHeader.classes.keys():
+        for clsName in list(self.CppHeader.classes.keys()):
             if clsName.startswith('_'):
               continue
             cls = self.CppHeader.classes[clsName]
@@ -156,7 +156,7 @@ class SingleFileParser(object):
         if wrappedMethods.count == 0 or wrappedMethods == [] and not isAbstract:
             print("[WARNING]    no constructor found for class " +  cls["name"])
             return None
-        cppdoc = cls['doxygen'] if cls.has_key('doxygen') else ''
+        cppdoc = cls['doxygen'] if 'doxygen' in cls else ''
         wrappedClass = FertilizedClass(CppType(cls["name"], True, typenames),
                                         types,
                                         wrappedMethods,

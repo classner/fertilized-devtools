@@ -70,8 +70,8 @@ class WrappedMethodCreator(object):
                              retVectorTypeSharedVar,
                              self.Method['returns_pointer'],
                              self.Method['returns_reference'],
-                             (self.Method.has_key('returns_const') and self.Method['returns_const']))
-        cppdoc = self.Method['doxygen'] if self.Method.has_key('doxygen') else ''
+                             ('returns_const' in self.Method and self.Method['returns_const']))
+        cppdoc = self.Method['doxygen'] if 'doxygen' in self.Method else ''
         method = WrappedMethod(self.FunctionPrefix,
                                self.NameFormat,
                                ret_type,
@@ -98,7 +98,7 @@ class WrappedMethodCreator(object):
 
     def ExpandTypes(self, type, typedef_names, cls, cls_template_params):
         if cls == None:
-            print "warning: handle unforseen cases??"
+            print("warning: handle unforseen cases??")
             return type
 
         # check if type contains a public typedef

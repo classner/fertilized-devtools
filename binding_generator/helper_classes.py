@@ -40,7 +40,7 @@ class Node(object):
 class FertilizedClass(object):
     r"""Describes a class in the fertilized library with its possible templated
     values.
-    
+
     Parameters
     ==========
 
@@ -95,7 +95,7 @@ class FertilizedClass(object):
         if serialization_generation is None:
           raise Exception("Serialization generation must be specified!")
         self.SerializationGeneration = serialization_generation
-         
+
         if supportedTypes == []:
             self.SupportedTypes = None
         else:
@@ -108,11 +108,14 @@ class FertilizedClass(object):
         self.Package = package
         self.SpecialConstuctor = specialConstructor
         self.DummyClass = dummyClass
-        # if the fit methods have a different name format put it here... 
-        # (e.g. RegressionForest needs different methods to fit and predict 
+        # if the fit methods have a different name format put it here...
+        # (e.g. RegressionForest needs different methods to fit and predict
         # trees than normal forests...)
         # TODO: check if still necessary.
         self.DifferentFitPredictMethodNames = None
+
+    def __lt__(self, other):
+        return self.ClassName < other.ClassName
 
     def getOperatorEQ(self):
         matches = [m for m in self.Methods if m.FunctionPrefix.replace(" ", "") == 'operator==']
@@ -135,7 +138,7 @@ class FertilizedClass(object):
     def getExclusiveSoilUsageAbbreviation(self):
         translated_parts = []
         for part in self.ExclusiveSoilUsage.Types:
-          if _dtype_str_translation.has_key(part):
+          if part in _dtype_str_translation:
             translated_parts.append(_dtype_str_translation[part])
           else:
             translated_parts.append(part)
@@ -152,7 +155,7 @@ class FertilizedClass(object):
 
     def getConstructor(self):
         length = 0
-        if not self.ClassType.TemplateParams == None:            
+        if not self.ClassType.TemplateParams == None:
             length = len(self.ClassType.TemplateParams)
         if self.SpecialConstuctor == None:
             return [length, self.ClassName]
@@ -224,7 +227,7 @@ class RstDocProvider(object):
             assert not param_desc_started
           param_desc_started = True
           convlines.append(indents + docstarter)
-          stripped_line = stripped_line[7:] # Remove \param 
+          stripped_line = stripped_line[7:] # Remove \param
           # Insert :
           if " " in stripped_line:
             spindex = stripped_line.index(" ")
@@ -254,7 +257,7 @@ class RstDocProvider(object):
         inline_splits = stripped_line.split(r'\f$')
         if len(inline_splits) % 2 == 0:
           raise Exception("Malformed doxygen inline formula! Inline formulas must be on one line!")
-        starts_joined = [inline_splits[i]+":math:`"+inline_splits[i+1] for i in xrange(0,len(inline_splits)-1,2)] + [inline_splits[-1]]
+        starts_joined = [inline_splits[i]+":math:`"+inline_splits[i+1] for i in range(0,len(inline_splits)-1,2)] + [inline_splits[-1]]
         stripped_line = "`".join(starts_joined)
         stripped_line = stripped_line.replace(r'\f[', '\n%s.. math::\n%s  ' % (indents + docstarter, indents + docstarter))
         stripped_line = stripped_line.replace(r'\f]', '\n%s' % (indents + docstarter))
@@ -262,7 +265,7 @@ class RstDocProvider(object):
         stripped_line = indents + docstarter + stripped_line
         convlines.extend(stripped_line.split('\n'))
       # Iterate over the converted lines and apply the escapes.
-      for lineidx in xrange(len(convlines)):
+      for lineidx in range(len(convlines)):
         for escape_str in escape:
           convlines[lineidx] = convlines[lineidx].replace(escape_str, '\\' + escape_str)
       return newline_str.join(convlines)
@@ -270,7 +273,7 @@ class RstDocProvider(object):
 class InstantiationTypes(object):
     r"""
     The instantiation types of one templated object instantiation.
-    
+
     Parameters
     ==========
 
@@ -329,7 +332,7 @@ class CppType(object):
         self.TypeString = typeString.strip()
         if self.TypeString.startswith("DllExport "):
           self.TypeString = self.TypeString[10:]
-        self.IsPtr = isClass       
+        self.IsPtr = isClass
         self.TemplateParams = templateParams
         self.IsVectorOfType = isVectorOfType
         self.IsVectorTypeShared = isVectorTypeShared
@@ -519,7 +522,7 @@ class CppType(object):
               """.format(**{'vec_cpp_type':self.render(instantiation_types, template_params=template_params, omit_reference=True, omit_pointer=True, omit_const=True, omit_typename=True),
                             'vec_inner_type': contained_type,
                             'argname':argname})
-            elif contained_type in _cpp_matlab_translation.keys():
+            elif contained_type in list(_cpp_matlab_translation.keys()):
               return r"""
     {vec_cpp_type} __converted_{argname};
     {{
@@ -634,7 +637,7 @@ class CppType(object):
             # To Matlab converters.
             if self.isFertilizedObjectInMatlab(allow_vector_of=True, instantiation_types=instantiation_types, template_params=template_params):
               raise Exception("No 'vector of library type' converters to Matlab are available (yet).")
-            elif contained_type in _cpp_matlab_translation.keys():
+            elif contained_type in list(_cpp_matlab_translation.keys()):
               return r"""
     mxArray *__converted_return_value;
     {{
@@ -666,9 +669,9 @@ class CppType(object):
         Is true, if the type is not a C type or in a vector.
         """
         lookupstr = self.render(instantiation_types, template_params=template_params, omit_vector=allow_vector_of, omit_typename=True, omit_const=True, omit_pointer=True, omit_reference=True)
-        return (not _dtype_c_translation.has_key(lookupstr)) or \
+        return (lookupstr not in _dtype_c_translation) or \
                self.IsVectorOfType and not allow_vector_of
-    
+
     def isFertilizedObjectInMatlab(self, allow_vector_of=False,
                                          instantiation_types=None,
                                          template_params=None):
@@ -806,7 +809,7 @@ class WrappedMethod(object):
           The prefix for the exported name.
 
         nameFormat : string
-          Format string to create the method name (two string parameters 
+          Format string to create the method name (two string parameters
           required, one for class name and one for instantiation suffix).
 
         returnType : CppType
@@ -820,7 +823,7 @@ class WrappedMethod(object):
 
         functionTemplate : string
           Jinja template filename to generate the export.
-          
+
         availableIn : list(string)
           Defines in which interfaces the method should be available.
 
@@ -848,7 +851,7 @@ class WrappedMethod(object):
 
     def getTemplateArgumentsLength(self):
         length = 0
-        if not self.TemplateArguments == None:            
+        if not self.TemplateArguments == None:
             length = len(self.TemplateArguments)
         return length
 
@@ -913,7 +916,7 @@ class WrappedMethod(object):
     def getExclusiveSoilUsageAbbreviation(self):
         translated_parts = []
         for part in self.ExclusiveSoilUsage.Types:
-          if _dtype_str_translation.has_key(part):
+          if part in _dtype_str_translation:
             translated_parts.append(_dtype_str_translation[part])
           else:
             translated_parts.append(part)
@@ -947,7 +950,7 @@ def tokenize(str):
       inside_count -= 1
     tokens[token_id] += chr
   assert inside_count == 0, '%s could not be parsed.' % (child_inherits)
-  for tkidx in xrange(len(tokens)):
+  for tkidx in range(len(tokens)):
     tokens[tkidx] = tokens[tkidx].strip()
   return tokens
 

@@ -24,7 +24,7 @@ def ExpandTypes(type, typedef_names, cls, cls_template_params):
             if m or tn == type:
                 replacement = 'typename fertilized::' + tn
                 type = type.replace(tn, replacement)
-        print "warning: handle unforseen cases??"
+        print("warning: handle unforseen cases??")
         return type
     else:
         # check if type contains a public typedef
@@ -44,7 +44,7 @@ def parse_raw_type(raw_type,
     typedef_names = None
     if not cls == None:
         cls_public_typedefs = cls._public_typedefs
-        typedef_names = cls_public_typedefs.keys()
+        typedef_names = list(cls_public_typedefs.keys())
         # Not all typenames are parsed properly: using declarations
         # can not be parsed (e.g. subsamplingdataprovider.h).
         # Collect these, too.

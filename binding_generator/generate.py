@@ -1,6 +1,6 @@
 # Authors: Philipp Harzig, Christoph Lassner.
 # Load the jinja library's namespace into the current module.
-from __future__ import print_function
+
 import jinja2
 import os
 import shutil
@@ -34,14 +34,14 @@ for cls in classes:
   defined_class_assocs[cls.ClassName.lower()] = cls
 using_relations = []
 for child_str, parent_str in using_rel_strs:
-  if not defined_class_assocs.has_key(child_str):
+  if child_str not in defined_class_assocs:
     raise Exception(("During parsing, I determined that class %s is using " +\
      "class %s. However, class %s does not seem to be a library defined " +\
      "class. These using relations are determined just by the #include " +\
      "header names. If you are using an external header, simply blacklist " +\
      "it in the file CodeGenerator/SingleFileParser.py (list starting on " +\
      "line 46).") % (parent_str, child_str, child_str))
-  if not defined_class_assocs.has_key(parent_str):
+  if parent_str not in defined_class_assocs:
     raise Exception(("During parsing, I determined that class {} is using " +\
      "class {}. However, class {} does not seem to be a library defined " +\
      "class. These using relations are determined just by the #include " +\
@@ -60,7 +60,7 @@ for cls in classes:
       class_name = cls.Inherits[:cls.Inherits.index("<")].strip().lower()
     if class_name == 'std::exception':
       continue
-    if defined_class_assocs.has_key(class_name):
+    if class_name in defined_class_assocs:
       inheritance_relations.append((cls, defined_class_assocs[class_name]))
     else:
       raise Exception("No class names %s found, but required for inheritance!"\
@@ -92,6 +92,7 @@ while True:
   if len(depth_search_cls) == 0:
     break
   depth += 1
+
 for clslist in depth_ordered_cls:
   clslist.sort()
 print ("Inheritance graph complete. Checking type availability...")
@@ -100,7 +101,7 @@ def parse_instantiations(relations):
   for (child, parent) in relations:
     if not parent.ClassType.TemplateParams is None and \
        len(parent.ClassType.TemplateParams) > 0:
-      if not child_instantiation_sets.has_key(parent):
+      if parent not in child_instantiation_sets:
         child_instantiation_sets[parent] = set()
       child_inherits = child.Inherits.strip().replace(" ", "").replace("\r","").replace("\n","")
       child_inherits = child_inherits[child_inherits.index("<")+1:-1]
@@ -141,7 +142,7 @@ def parse_instantiations(relations):
   return child_instantiation_sets
 
 child_instantiation_sets = parse_instantiations(inheritance_relations)
-for parent, inst_set in child_instantiation_sets.items():
+for parent, inst_set in list(child_instantiation_sets.items()):
   parent_set = set(parent.SupportedTypes)
   assert parent_set == inst_set, \
     "The sets of instantiation types for " + parent.ClassName + " and " +\
@@ -159,7 +160,7 @@ def parse_using_instantiations(relations):
       continue
     if not parent.ClassType.TemplateParams is None and \
        len(parent.ClassType.TemplateParams) > 0:
-      if not child_instantiation_sets.has_key(parent):
+      if parent not in child_instantiation_sets:
         child_instantiation_sets[parent] = set()
       tokens = child.ClassType.TemplateParams
       if not child.SupportedTypes is None and len(child.SupportedTypes) > 0:
@@ -323,7 +324,7 @@ for cls in serialization_classes:
     raise Exception("Class " + cls.ClassName + " is templated as " +\
                     cls.TemplatingString + " and " +\
                     "serializable, but has no specified supported types!")
-templateVars = {"tplids" : xrange(len(ser_insttypes_tpls))}
+templateVars = {"tplids" : range(len(ser_insttypes_tpls))}
 generated = serialization_cpp_tmpl.render(templateVars)
 with open(os.path.join(BASE_OUT_DIR,
                        'serialization',
@@ -361,13 +362,13 @@ vec_headers = dict()
 for func in python_exp_functions:
   func_vec_types = func.getVectorizedTypes('Python')
   for tp in func_vec_types:
-    if not tp in vec_headers.keys():
+    if not tp in list(vec_headers.keys()):
       vec_headers[tp] = func.DefiningHeader
   vec_types.update(func_vec_types)
 for cls in python_exp_classes:
   cls_vec_types = cls.getVectorizedTypes('Python')
   for tp in cls_vec_types:
-    if not tp in vec_headers.keys():
+    if not tp in list(vec_headers.keys()):
       vec_headers[tp] = cls.DefiningHeader
   vec_types.update(cls_vec_types)
 if 'uint' in vec_types:
@@ -394,13 +395,13 @@ def chunks(seq, size):
 
     See http://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks.  # noqa
     """
-    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 # Care! The chunksize must be equal in pyfertilized/SConscript.py
 chunksize = 50
-for export_id, clsids in enumerate(chunks(range(len(cls_inst_tpls)), chunksize)):
+for export_id, clsids in enumerate(chunks(list(range(len(cls_inst_tpls))), chunksize)):
     templateVars = {"classes" : python_exp_classes,
-                    'nmfuncids':xrange(len(func_inst_tpls)),
-                    'tmplids':xrange(len(vec_types)),
+                    'nmfuncids':range(len(func_inst_tpls)),
+                    'tmplids':range(len(vec_types)),
                     'clsids': clsids,
                     'export_id': export_id}
     generated = pyfertilized_cpp_tmpl.render(templateVars)
@@ -450,7 +451,7 @@ for func_ind, (func, insttp) in enumerate(func_inst_tpls):
     generated = python_export_module_functions_cpp_tmpl.render(templateVars)
     with open(os.path.join(pyfunc_export_dir, '__export_module_function_%d.cpp' % (func_ind)), 'w') as expfile:
       expfile.write(generated)
-generated = python_export_module_functions_h_tmpl.render({'nmfuncids':xrange(len(func_inst_tpls))})
+generated = python_export_module_functions_h_tmpl.render({'nmfuncids':range(len(func_inst_tpls))})
 with open(os.path.join(pyfunc_export_dir, 'export_module_functions.h'), 'w') as expfile:
   expfile.write(generated)
 templateVars = {"functions":python_exp_functions,
@@ -475,7 +476,7 @@ for tpind, vec_type in enumerate(vec_types):
     with open(os.path.join(vec_export_dir,
                             '__vec_exporter_%d.cpp' % (tpind)), 'w') as expfile:
         expfile.write(generated)
-generated = vec_exporter_h_tmpl.render({'tmplids':xrange(len(vec_types))})
+generated = vec_exporter_h_tmpl.render({'tmplids':range(len(vec_types))})
 with open(os.path.join(vec_export_dir,
                         'vec_exporter.h'), 'w') as expfile:
     expfile.write(generated)
