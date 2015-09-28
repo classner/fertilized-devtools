@@ -627,4 +627,11 @@ outputText = soilm_tmpl.render( templateVars )
 with open(os.path.join(MATINTERFACE_DIR, 'fertilized', 'Soil.m'), 'w') as f:
     f.write(outputText)
 
+# Update `TypeTranslations.py` to keep them consistent.
+print('Updating `TypeTranslations.py`...')
+shutil.copyfile('TypeTranslations.py',
+                os.path.join(PYINTERFACE_DIR,
+                             'fertilized',
+                             'TypeTranslations.py'))
+
 print('Rendering complete.')
