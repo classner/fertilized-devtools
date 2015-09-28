@@ -4,6 +4,7 @@
 import jinja2
 import os
 import shutil
+import collections
 import operator
 import itertools
 import glob
@@ -12,6 +13,7 @@ import traceback
 from os.path import basename
 from helper_classes import InstantiationTypes, Node
 from TypeTranslations import _dtype_str_translation
+from ordered_set import OrderedSet
 
 BASE_DIR = os.path.join('..', '..', 'include', 'fertilized')
 BASE_OUT_DIR = os.path.join('..', '..', 'src')
@@ -25,6 +27,12 @@ using_rel_strs = ParseHeader.using_relations_str
 classes = ParseHeader.parsed_classes
 functions = sorted(ParseHeader.parsed_functions, key=lambda x: x.FunctionPrefix)
 lib_headers = ParseHeader.lib_headers
+
+# Ensure deterministic results.
+classes.sort()
+functions.sort()
+lib_headers.sort()
+_dtype_str_translation = collections.OrderedDict(sorted(_dtype_str_translation.items()))
 
 # Do some consistency checks.
 print ("Consistency checks...")
@@ -374,6 +382,9 @@ for cls in python_exp_classes:
 if 'uint' in vec_types:
   if 'fertilized::uint' in vec_types:
      vec_types.remove('uint')
+
+vec_types = OrderedSet(sorted(vec_types))
+
 func_inst_tpls = []
 for func in python_exp_functions:
     if not func.SupportedTypes is None and not func.TemplateArguments is None and len(func.TemplateArguments) > 0:

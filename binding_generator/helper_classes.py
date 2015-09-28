@@ -115,6 +115,9 @@ class FertilizedClass(object):
         self.DifferentFitPredictMethodNames = None
 
     def __lt__(self, other):
+        if self.ClassName == other.ClassName:
+            # Break ties.
+            return self.DefiningHeader < other.DefiningHeader
         return self.ClassName < other.ClassName
 
     def getOperatorEQ(self):
@@ -848,6 +851,12 @@ class WrappedMethod(object):
         self.ExclusiveSoilUsage = exclusiveSoilUsage
         self.ParentClass = None
         self.IsConstructor = isConstructor
+
+    def __lt__(self, other):
+        if self.FunctionPrefix == other.FunctionPrefix:
+            # Break ties.
+            return self.DefiningHeader < other.DefiningHeader
+        return self.FunctionPrefix < other.FunctionPrefix
 
     def getTemplateArgumentsLength(self):
         length = 0

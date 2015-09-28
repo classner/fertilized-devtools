@@ -1,0 +1,3 @@
+cppheaderparser>=2.7.1
+ply
+jinja2
