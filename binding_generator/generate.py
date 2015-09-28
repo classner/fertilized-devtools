@@ -26,6 +26,11 @@ classes = ParseHeader.parsed_classes
 functions = sorted(ParseHeader.parsed_functions, key=lambda x: x.FunctionPrefix)
 lib_headers = ParseHeader.lib_headers
 
+# Ensure deterministic results.
+classes.sort()
+functions.sort()
+lib_headers.sort()
+
 # Do some consistency checks.
 print ("Consistency checks...")
 # Create a class name -> class hash table.
