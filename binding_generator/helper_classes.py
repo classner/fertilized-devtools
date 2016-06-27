@@ -285,6 +285,13 @@ class InstantiationTypes(object):
     """
     def __init__(self, types):
         self.Types = types
+        for type in types:
+          stripped_type = type.strip().replace(" ", "").replace("\r","").replace("\n","")
+          assert stripped_type in _dtype_str_translation, (
+            "The type '{}' could not be translated to a short form. Did you "
+            "create it as new type? In that case, simply open `TypeTranslations.py` "
+            "and add it to the `_dtype_str_translation` dictionary.".format(
+              stripped_type))
         self.TypesString = "_".join([_dtype_str_translation[type.strip().replace(" ", "").replace("\r","").replace("\n","")] \
                                       for type in types])
     def __eq__(self, other):
